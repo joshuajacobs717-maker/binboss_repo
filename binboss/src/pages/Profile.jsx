@@ -10,7 +10,7 @@ const initialProfile = {
   photoUrl: '',
 }
 
-function Profile() {
+function Profile({ onLogout }) {
   const [profile, setProfile] = useState(initialProfile)
   const [cameraError, setCameraError] = useState('')
   const [isCameraOpen, setIsCameraOpen] = useState(false)
@@ -138,7 +138,7 @@ function Profile() {
         </dl>
       </div>
 
-      <LogoutButton />
+      <LogoutButton onLogout={onLogout} />
 
       {isCameraOpen && (
         <div className="modal-backdrop" role="presentation">
