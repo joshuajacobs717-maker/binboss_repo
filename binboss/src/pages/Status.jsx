@@ -287,10 +287,6 @@ function Status({
                 <dt>Email</dt>
                 <dd>{contactCleaner.email}</dd>
               </div>
-              <div>
-                <dt>ID number</dt>
-                <dd>{contactCleaner.idNumber}</dd>
-              </div>
             </dl>
           </section>
         </div>

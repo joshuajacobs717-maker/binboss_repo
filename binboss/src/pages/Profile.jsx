@@ -4,24 +4,35 @@ import LogoutButton from '../components/LogoutButton.jsx'
 
 const initialProfile = {
   name: 'Joshua Jacobs',
+  firstName: 'Joshua',
+  lastName: 'Jacobs',
   email: 'joshua@example.com',
   phone: '+27 72 555 0198',
+  contact: '+27 72 555 0198',
   address: '24 Greenway Road, Johannesburg',
+  initials: 'JJ',
+  binId: 'BIN-6F5F',
   photoUrl: '',
 }
 
-function Profile({ onLogout }) {
-  const [profile, setProfile] = useState(initialProfile)
+function Profile({ onLogout, onProfileChange, profile: savedProfile = initialProfile }) {
+  const profile = savedProfile
   const [cameraError, setCameraError] = useState('')
   const [isCameraOpen, setIsCameraOpen] = useState(false)
   const streamRef = useRef(null)
   const videoRef = useRef(null)
 
-  const initials = profile.name
-    .split(' ')
-    .map((part) => part[0])
-    .join('')
-    .slice(0, 2)
+  const initials =
+    profile.initials ||
+    profile.name
+      .split(' ')
+      .map((part) => part[0])
+      .join('')
+      .slice(0, 2)
+
+  const saveProfile = (nextProfile) => {
+    onProfileChange?.(nextProfile)
+  }
 
   const handlePhotoChange = (event) => {
     const file = event.target.files?.[0]
@@ -33,10 +44,10 @@ function Profile({ onLogout }) {
     const reader = new FileReader()
 
     reader.onload = () => {
-      setProfile((currentProfile) => ({
-        ...currentProfile,
+      saveProfile({
+        ...profile,
         photoUrl: reader.result,
-      }))
+      })
     }
 
     reader.readAsDataURL(file)
@@ -83,10 +94,10 @@ function Profile({ onLogout }) {
     canvas.height = video.videoHeight
     canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height)
 
-    setProfile((currentProfile) => ({
-      ...currentProfile,
+    saveProfile({
+      ...profile,
       photoUrl: canvas.toDataURL('image/jpeg', 0.9),
-    }))
+    })
     stopCamera()
   }
 
@@ -120,9 +131,19 @@ function Profile({ onLogout }) {
       <div className="profile-details">
         <div className="profile-details__title">
           <h2>Details</h2>
-          <EditDetailsButton profile={profile} onSave={setProfile} />
+          <EditDetailsButton profile={profile} onSave={saveProfile} />
         </div>
         <dl>
+          <div>
+            <dt>Name</dt>
+            <dd>{profile.firstName || profile.name}</dd>
+          </div>
+          {profile.lastName && (
+            <div>
+              <dt>Last name</dt>
+              <dd>{profile.lastName}</dd>
+            </div>
+          )}
           <div>
             <dt>Email</dt>
             <dd>{profile.email}</dd>
@@ -131,10 +152,24 @@ function Profile({ onLogout }) {
             <dt>Phone</dt>
             <dd>{profile.phone}</dd>
           </div>
-          <div>
-            <dt>Address</dt>
-            <dd>{profile.address}</dd>
-          </div>
+          {profile.idNumber && (
+            <div>
+              <dt>ID number</dt>
+              <dd>{profile.idNumber}</dd>
+            </div>
+          )}
+          {profile.address && (
+            <div>
+              <dt>Address</dt>
+              <dd>{profile.address}</dd>
+            </div>
+          )}
+          {profile.binId && (
+            <div>
+              <dt>Bin ID</dt>
+              <dd>{profile.binId}</dd>
+            </div>
+          )}
         </dl>
       </div>
 

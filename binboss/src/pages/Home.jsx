@@ -47,12 +47,6 @@ const cleaners = [
   },
 ]
 
-const binDetails = {
-  binId: 'BIN-6F5F',
-  userInitials: 'JM',
-  address: '24 Greenway Road, Johannesburg',
-}
-
 function formatSchedule(schedule) {
   if (!schedule?.date || !schedule?.time) {
     return 'Now'
@@ -71,6 +65,7 @@ function getBinIdFromScan(value) {
 function Home({
   activeJobs = [],
   cleanerRequests = [],
+  homeownerProfile,
   onCleanerAccepted,
   onCleanerRequestAccepted,
   onCleanerRequestRejected,
@@ -91,6 +86,11 @@ function Home({
   const scannerVideoRef = useRef(null)
   const scannerFrameRef = useRef(null)
   const scannerDetectorRef = useRef(null)
+  const binDetails = {
+    binId: homeownerProfile?.binId || 'BIN-6F5F',
+    userInitials: homeownerProfile?.initials || 'BB',
+    address: homeownerProfile?.address || 'Address pending',
+  }
 
   const qrValue = `Bin ID: ${binDetails.binId}
 User initials: ${binDetails.userInitials}
