@@ -1,10 +1,10 @@
 const navItems = [
-  { id: 'status', label: 'Status', icon: 'S' },
-  { id: 'home', label: 'Home', icon: 'H' },
-  { id: 'profile', label: 'Profile', icon: 'P' },
+  { id: 'status', labelKey: 'status', icon: 'S' },
+  { id: 'home', labelKey: 'home', icon: 'H' },
+  { id: 'profile', labelKey: 'profile', icon: 'P' },
 ]
 
-function Navbar({ activeTab, onTabChange }) {
+function Navbar({ activeTab, onTabChange, t = (key) => key }) {
   return (
     <nav className="bottom-nav" aria-label="Primary navigation">
       {navItems.map((item) => (
@@ -18,7 +18,7 @@ function Navbar({ activeTab, onTabChange }) {
           <span className="nav-tab__icon" aria-hidden="true">
             {item.icon}
           </span>
-          <span>{item.label}</span>
+          <span>{t(item.labelKey)}</span>
         </button>
       ))}
     </nav>

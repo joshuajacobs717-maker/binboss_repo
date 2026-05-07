@@ -210,10 +210,10 @@ button {
 
 .eyebrow {
   color: #2fa084;
-  font-size: 20px;
+  font-size: 40px;
   font-weight: 800;
   letter-spacing: 0;
-  margin: 0 0 50px;
+  margin: 0 0 60px;
   text-transform: uppercase;
 }
 
@@ -302,7 +302,7 @@ h2 {
   background: #ffffff;
   border: 1px solid rgba(31, 111, 95, 0.12);
   border-radius: 8px;
-  bottom: 34px;
+  bottom: 112px;
   box-shadow: 0 20px 52px rgba(31, 111, 95, 0.2);
   display: grid;
   gap: 14px;
@@ -357,6 +357,46 @@ h2 {
   background: rgba(111, 207, 151, 0.16);
   border-radius: 8px;
   padding: 12px;
+}
+
+.availability-hint {
+  color: #1f6f5f;
+  font-weight: 900;
+  margin: 16px 0 0;
+  text-align: center;
+}
+
+.availability-toggle {
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid rgba(31, 111, 95, 0.12);
+  border-radius: 8px;
+  bottom: 34px;
+  box-shadow: 0 18px 42px rgba(31, 111, 95, 0.18);
+  color: #1f6f5f;
+  display: grid;
+  gap: 4px;
+  left: 50%;
+  min-height: 62px;
+  min-width: 240px;
+  padding: 10px 18px;
+  position: absolute;
+  transform: translateX(-50%);
+  z-index: 3;
+}
+
+.availability-toggle span {
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.availability-toggle strong {
+  font-size: 16px;
+}
+
+.availability-toggle--active {
+  background: #1f6f5f;
+  color: #eeeeee;
 }
 
 .bin-stage {
@@ -424,6 +464,97 @@ h2 {
 .schedule-clean-button {
   min-height: 54px;
   padding: 0 26px;
+}
+
+.clean-options-panel {
+  animation: cardPop 0.35s ease both;
+  background: #ffffff;
+  border: 1px solid rgba(31, 111, 95, 0.12);
+  border-radius: 8px;
+  bottom: 34px;
+  box-shadow: 0 20px 52px rgba(31, 111, 95, 0.2);
+  display: grid;
+  gap: 14px;
+  left: 18px;
+  margin: 0 auto;
+  max-width: 520px;
+  padding: 18px;
+  position: absolute;
+  right: 18px;
+  text-align: left;
+  z-index: 4;
+}
+
+.clean-options-panel .eyebrow {
+  font-size: 13px;
+  margin: 0;
+}
+
+.bin-cost-list {
+  display: grid;
+  gap: 10px;
+}
+
+.bin-cost-list label {
+  align-items: center;
+  background: rgba(111, 207, 151, 0.14);
+  border: 2px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: auto 1fr auto;
+  min-height: 48px;
+  padding: 10px 12px;
+}
+
+.bin-cost-list label:has(input:checked) {
+  background: #ffffff;
+  border-color: #1f6f5f;
+  box-shadow: 0 10px 24px rgba(31, 111, 95, 0.14);
+}
+
+.bin-cost-list input,
+.payment-method-toggle input {
+  accent-color: #1f6f5f;
+  height: 16px;
+  margin: 0;
+  padding: 0;
+  width: 16px;
+}
+
+.bin-cost-list span,
+.bin-cost-list strong {
+  color: #1f6f5f;
+  font-weight: 900;
+}
+
+.payment-method-toggle {
+  background: rgba(31, 111, 95, 0.1);
+  border-radius: 8px;
+  display: grid;
+  gap: 6px;
+  grid-template-columns: 1fr 1fr;
+  padding: 6px;
+}
+
+.payment-method-toggle label {
+  align-items: center;
+  border-radius: 8px;
+  color: #1f6f5f;
+  cursor: pointer;
+  display: flex;
+  font-size: 14px;
+  font-weight: 900;
+  gap: 8px;
+  justify-content: center;
+  min-height: 42px;
+  text-transform: capitalize;
+}
+
+.payment-method-toggle__option--active {
+  background: #ffffff;
+  box-shadow: 0 8px 20px rgba(31, 111, 95, 0.12);
 }
 
 .qr-fab {
@@ -799,6 +930,22 @@ dd {
   width: 100%;
 }
 
+.language-button {
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid rgba(31, 111, 95, 0.12);
+  border-radius: 50%;
+  box-shadow: 0 14px 32px rgba(31, 111, 95, 0.16);
+  display: flex;
+  font-size: 22px;
+  height: 48px;
+  justify-content: center;
+  position: absolute;
+  right: 34px;
+  top: 34px;
+  width: 48px;
+}
+
 .profile-header {
   align-items: center;
   display: flex;
@@ -871,6 +1018,39 @@ dd {
   max-width: 440px;
   padding: 20px;
   width: 100%;
+}
+
+.language-modal {
+  background: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 24px 70px rgba(31, 111, 95, 0.25);
+  display: grid;
+  gap: 18px;
+  max-width: 420px;
+  padding: 22px;
+  width: 100%;
+}
+
+.language-list {
+  display: grid;
+  gap: 10px;
+}
+
+.language-option {
+  background: rgba(111, 207, 151, 0.14);
+  border: 2px solid transparent;
+  border-radius: 8px;
+  color: #1f6f5f;
+  font-weight: 900;
+  min-height: 48px;
+  text-align: left;
+  padding: 0 14px;
+}
+
+.language-option--active {
+  background: #ffffff;
+  border-color: #1f6f5f;
+  box-shadow: 0 10px 24px rgba(31, 111, 95, 0.14);
 }
 
 .camera-preview {
@@ -1672,6 +1852,14 @@ textarea {
   }
 
   .homeowner-request-card {
+    bottom: 178px;
+  }
+
+  .availability-toggle {
+    bottom: 106px;
+  }
+
+  .clean-options-panel {
     bottom: 96px;
   }
 

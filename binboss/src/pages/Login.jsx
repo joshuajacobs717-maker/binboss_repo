@@ -2,11 +2,11 @@ import { useState } from 'react'
 
 const credentials = {
   homeowner: {
-    email: 'homeowner@binboss.co.za',
+    email: 'homeowner@a',
     password: 'home123',
   },
   cleaner: {
-    email: 'cleaner@binboss.co.za',
+    email: 'cleaner@a',
     password: 'clean123',
   },
 }
@@ -14,7 +14,7 @@ const credentials = {
 const getInitials = (name, lastName) =>
   `${name?.trim().charAt(0) || ''}${lastName?.trim().charAt(0) || ''}`.toUpperCase() || 'BB'
 
-function Login({ onLogin }) {
+function Login({ onLogin, t = (key) => key }) {
   const [selectedRole, setSelectedRole] = useState(null)
   const [authMode, setAuthMode] = useState('signin')
   const [signupRole, setSignupRole] = useState(null)
@@ -108,14 +108,14 @@ function Login({ onLogin }) {
       return (
         <div className="login-actions">
           <button className="primary-action" onClick={() => handleRoleSelect('homeowner')} type="button">
-            Sign in as homeowner
+            {t('signInHomeowner')}
           </button>
           <button className="secondary-action" onClick={() => handleRoleSelect('cleaner')} type="button">
-            Sign in as cleaner
+            {t('signInCleaner')}
           </button>
           <p className="login-divider">or</p>
           <button className="secondary-action login-signup-button" onClick={() => setAuthMode('signup')} type="button">
-            Sign up
+            {t('signUp')}
           </button>
         </div>
       )
@@ -124,13 +124,13 @@ function Login({ onLogin }) {
     return (
       <form className="login-form" onSubmit={handleSubmit}>
         <div className="login-role-row">
-          <h2>{selectedRole === 'homeowner' ? 'Homeowner' : 'Cleaner'}</h2>
+          <h2>{selectedRole === 'homeowner' ? t('homeowner') : t('cleaner')}</h2>
           <button className="secondary-action login-back-button" onClick={() => setSelectedRole(null)} type="button">
-            Change
+            {t('change')}
           </button>
         </div>
         <label>
-          Email
+          {t('email')}
           <input
             autoComplete="email"
             onChange={(event) => setEmail(event.target.value)}
@@ -151,7 +151,7 @@ function Login({ onLogin }) {
         </label>
         {error && <p className="login-error">{error}</p>}
         <button className="primary-action" type="submit">
-          Sign in
+          {t('signIn')}
         </button>
       </form>
     )
@@ -162,13 +162,13 @@ function Login({ onLogin }) {
       return (
         <div className="login-actions">
           <button className="primary-action" onClick={() => handleSignUpSelect('homeowner')} type="button">
-            Homeowner
+            {t('homeowner')}
           </button>
           <button className="secondary-action" onClick={() => handleSignUpSelect('cleaner')} type="button">
-            Cleaner
+            {t('cleaner')}
           </button>
           <button className="secondary-action login-signup-button" onClick={handleBackToSignIn} type="button">
-            Back to sign in
+            {t('backToSignIn')}
           </button>
         </div>
       )
@@ -177,31 +177,31 @@ function Login({ onLogin }) {
     return (
       <form className="login-form signup-form" onSubmit={handleSignUpSubmit}>
         <div className="login-role-row">
-          <h2>{signupRole === 'homeowner' ? 'Homeowner' : 'Cleaner'}</h2>
+          <h2>{signupRole === 'homeowner' ? t('homeowner') : t('cleaner')}</h2>
           <button className="secondary-action login-back-button" onClick={() => handleSignUpSelect(null)} type="button">
-            Change
+            {t('change')}
           </button>
         </div>
         <div className="signup-field-grid">
           <label>
-            Name
+            {t('name')}
             <input autoComplete="given-name" name="name" required type="text" />
           </label>
           <label>
-            Last name
+            {t('lastName')}
             <input autoComplete="family-name" name="lastName" required type="text" />
           </label>
           <label>
-            Email
+            {t('email')}
             <input autoComplete="email" name="email" required type="email" />
           </label>
           <label>
-            Contact
+            {t('contact')}
             <input autoComplete="tel" name="contact" required type="tel" />
           </label>
           {signupRole === 'cleaner' && (
             <label className="signup-field-grid__full">
-              ID number
+              {t('idNumber')}
               <input
                 inputMode="numeric"
                 maxLength={13}
@@ -247,7 +247,7 @@ function Login({ onLogin }) {
         )}
         {error && <p className="login-error">{error}</p>}
         <button className="primary-action" type="submit">
-          Sign up
+          {t('signUp')}
         </button>
       </form>
     )
@@ -258,7 +258,7 @@ function Login({ onLogin }) {
       <div className={`login-panel ${signupRole ? 'login-panel--wide' : ''}`}>
         <div className="login-panel__header">
           <p className="eyebrow">BinBoss</p>
-          <h1>{authMode === 'signup' ? 'Sign Up as' : 'Welcome'}</h1>
+          <h1>{authMode === 'signup' ? t('signUp') : t('welcome')}</h1>
         </div>
 
         {authMode === 'signup' ? renderSignUp() : renderSignIn()}

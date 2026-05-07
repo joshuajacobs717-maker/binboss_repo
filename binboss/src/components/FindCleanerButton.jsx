@@ -1,4 +1,4 @@
-function FindCleanerButton({ isSearching, onFindCleaner }) {
+function FindCleanerButton({ isSearching, onFindCleaner, t = (key) => key }) {
   return (
     <button
       className={`primary-action ${isSearching ? 'primary-action--searching' : ''}`}
@@ -6,7 +6,7 @@ function FindCleanerButton({ isSearching, onFindCleaner }) {
       onClick={onFindCleaner}
       type="button"
     >
-      {isSearching ? 'Searching...' : 'Find cleaner'}
+      {isSearching ? t('searching') : t('findCleaner')}
     </button>
   )
 }

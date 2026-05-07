@@ -4,6 +4,7 @@ import Login from './pages/Login.jsx'
 import Profile from './pages/Profile.jsx'
 import Status from './pages/Status.jsx'
 import Navbar from './components/Navbar.jsx'
+import { getTranslator } from './i18n.js'
 
 const tabs = {
   status: Status,
@@ -88,6 +89,8 @@ function App() {
   const [pastJobs, setPastJobs] = useState([])
   const [cleanerRequests, setCleanerRequests] = useState(initialCleanerRequests)
   const [showSplash, setShowSplash] = useState(true)
+  const [isCleanerAvailable, setIsCleanerAvailable] = useState(false)
+  const [language, setLanguage] = useState('en')
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -124,6 +127,28 @@ function App() {
 
   const handleCleanerRequestRejected = (requestId) => {
     setCleanerRequests((requests) => requests.filter((request) => request.id !== requestId))
+  }
+
+  const sendBookingNotification = () => {
+    const title = t('bookingMadeTitle')
+    const body = t('bookingMadeBody')
+
+    if (!('Notification' in window)) {
+      return
+    }
+
+    if (Notification.permission === 'granted') {
+      new Notification(title, { body })
+      return
+    }
+
+    if (Notification.permission === 'default') {
+      Notification.requestPermission().then((permission) => {
+        if (permission === 'granted') {
+          new Notification(title, { body })
+        }
+      })
+    }
   }
 
   const handleJobStatusUpdate = (jobId, status, photo = null) => {
@@ -187,17 +212,24 @@ function App() {
     setActiveJobs((jobs) => jobs.filter((job) => job.id !== jobId))
   }
 
+  const handleJobCanceled = (jobId) => {
+    setActiveJobs((jobs) => jobs.filter((job) => job.id !== jobId))
+  }
+
   const ActivePage = tabs[activeTab]
   const activeProfile = profiles[role] || defaultProfiles.homeowner
   const homeownerProfile = profiles.homeowner
+  const t = getTranslator(language)
   const pageProps = {
     home: {
       activeJobs,
       cleanerRequests,
       homeownerProfile,
+      isCleanerAvailable,
+      onCleanerAvailabilityChange: setIsCleanerAvailable,
       onCleanerRequestAccepted: handleCleanerRequestAccepted,
       onCleanerRequestRejected: handleCleanerRequestRejected,
-      onCleanerAccepted: (cleaner, schedule = null) => {
+      onCleanerAccepted: (cleaner, schedule = null, cleanDetails = null) => {
         setActiveJobs((jobs) => [
           {
             id: `${Date.now()}-${cleaner.email}`,
@@ -205,25 +237,32 @@ function App() {
             cleaner,
             requestType: schedule ? 'scheduled' : 'instant',
             schedule,
+            cleanDetails,
             status: 'Not collected',
             address: homeownerProfile.address,
             ownerInitials: homeownerProfile.initials,
           },
           ...jobs,
         ])
+        sendBookingNotification()
         setActiveTab('status')
       },
       role,
+      t,
     },
     status: {
       activeJobs,
+      onJobCancel: handleJobCanceled,
       onJobStatusUpdate: handleJobStatusUpdate,
       onReturnVerified: handleReturnVerified,
       pastJobs,
       role,
+      t,
     },
     profile: {
+      language,
       onLogout: handleLogout,
+      onLanguageChange: setLanguage,
       profile: activeProfile,
       onProfileChange: (updatedProfile) => {
         setProfiles((currentProfiles) => ({
@@ -231,6 +270,7 @@ function App() {
           [role]: updatedProfile,
         }))
       },
+      t,
     },
   }
 
@@ -245,10 +285,10 @@ function App() {
       {role ? (
         <section className={`phone-frame ${showSplash ? 'phone-frame--hidden' : ''}`}>
           <ActivePage {...pageProps[activeTab]} />
-          <Navbar activeTab={activeTab} onTabChange={setActiveTab} />
+          <Navbar activeTab={activeTab} onTabChange={setActiveTab} t={t} />
         </section>
       ) : (
-        <Login onLogin={handleLogin} />
+        <Login onLogin={handleLogin} t={t} />
       )}
     </main>
   )

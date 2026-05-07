@@ -46,17 +46,24 @@ function StatusCard({
   actionLabel = 'View cleaner',
   binId = 'BIN-2048',
   compact = false,
+  cleanDetails = null,
+  onCancel,
   onStatusChange,
   onViewCleaner,
   schedule = null,
   showStatusControls = false,
   status = 'Cleaned',
+  t = (key) => key,
 }) {
   const activeIndex = statusSteps.indexOf(status)
   const nextStatus = statusSteps[activeIndex + 1]
   const scheduledDateTime = formatScheduledDateTime(schedule)
   const calendarUrl = createCalendarUrl(binId, schedule)
   const cardClassName = `status-card ${compact ? 'status-card--compact' : ''}`
+  const paymentText = cleanDetails?.paymentMethod
+    ? cleanDetails.paymentMethod.charAt(0).toUpperCase() + cleanDetails.paymentMethod.slice(1)
+    : ''
+  const canCancel = !showStatusControls && status === 'Not collected'
   const cleanerButton = (
     <button className="secondary-action view-cleaner-button" onClick={onViewCleaner} type="button">
       {actionLabel}
@@ -85,7 +92,12 @@ function StatusCard({
       onClick={() => onStatusChange(nextStatus)}
       type="button"
     >
-      Update status to {nextStatus}
+      {t('updateStatusTo')} {nextStatus}
+    </button>
+  )
+  const cancelButton = canCancel && (
+    <button className="secondary-action cancel-cleaner-button" onClick={onCancel} type="button">
+      {t('cancelCleaner')}
     </button>
   )
 
@@ -94,27 +106,34 @@ function StatusCard({
       <article className={cardClassName}>
         <p className="eyebrow">Bin ID</p>
         <h1>{binId}</h1>
-        <div className="status-card__current">Scheduled clean</div>
+        <div className="status-card__current">{t('scheduledClean')}</div>
         <dl className="status-card__details">
           <div>
-            <dt>Date and time</dt>
+            <dt>{t('dateAndTime')}</dt>
             <dd>{scheduledDateTime}</dd>
           </div>
           <div>
-            <dt>Status</dt>
+            <dt>{t('status')}</dt>
             <dd>{status}</dd>
           </div>
+          {paymentText && (
+            <div>
+              <dt>{t('payment')}</dt>
+              <dd>{paymentText}</dd>
+            </div>
+          )}
         </dl>
         {statusList}
         <div className="status-card__actions">
           {cleanerButton}
           {updateButton}
+          {cancelButton}
           <a
             className="primary-action calendar-button"
             download={`binboss-${binId}-clean.ics`}
             href={calendarUrl}
           >
-            Add to calendar
+            {t('addToCalendar')}
           </a>
         </div>
       </article>
@@ -126,10 +145,19 @@ function StatusCard({
       <p className="eyebrow">Bin ID</p>
       <h1>{binId}</h1>
       <div className="status-card__current">{status}</div>
+      {paymentText && (
+        <dl className="status-card__details">
+          <div>
+            <dt>{t('payment')}</dt>
+            <dd>{paymentText}</dd>
+          </div>
+        </dl>
+      )}
       {statusList}
       <div className="status-card__actions">
         {cleanerButton}
         {updateButton}
+        {cancelButton}
       </div>
     </article>
   )

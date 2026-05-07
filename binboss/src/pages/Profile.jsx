@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import EditDetailsButton from '../components/EditDetailsButton.jsx'
 import LogoutButton from '../components/LogoutButton.jsx'
+import { languages } from '../i18n.js'
 
 const initialProfile = {
   name: 'Joshua Jacobs',
@@ -15,10 +16,18 @@ const initialProfile = {
   photoUrl: '',
 }
 
-function Profile({ onLogout, onProfileChange, profile: savedProfile = initialProfile }) {
+function Profile({
+  language = 'en',
+  onLanguageChange,
+  onLogout,
+  onProfileChange,
+  profile: savedProfile = initialProfile,
+  t = (key) => key,
+}) {
   const profile = savedProfile
   const [cameraError, setCameraError] = useState('')
   const [isCameraOpen, setIsCameraOpen] = useState(false)
+  const [isLanguageOpen, setIsLanguageOpen] = useState(false)
   const streamRef = useRef(null)
   const videoRef = useRef(null)
 
@@ -111,6 +120,14 @@ function Profile({ onLogout, onProfileChange, profile: savedProfile = initialPro
 
   return (
     <section className="page profile-page">
+      <button
+        aria-label={t('chooseLanguage')}
+        className="language-button"
+        onClick={() => setIsLanguageOpen(true)}
+        type="button"
+      >
+        💬
+      </button>
       <div className="profile-header">
         <div className="profile-photo" aria-label={`${profile.name} profile picture`}>
           {profile.photoUrl ? <img alt="" src={profile.photoUrl} /> : initials}
@@ -130,43 +147,43 @@ function Profile({ onLogout, onProfileChange, profile: savedProfile = initialPro
 
       <div className="profile-details">
         <div className="profile-details__title">
-          <h2>Details</h2>
+          <h2>{t('details')}</h2>
           <EditDetailsButton profile={profile} onSave={saveProfile} />
         </div>
         <dl>
           <div>
-            <dt>Name</dt>
+            <dt>{t('name')}</dt>
             <dd>{profile.firstName || profile.name}</dd>
           </div>
           {profile.lastName && (
             <div>
-              <dt>Last name</dt>
+              <dt>{t('lastName')}</dt>
               <dd>{profile.lastName}</dd>
             </div>
           )}
           <div>
-            <dt>Email</dt>
+            <dt>{t('email')}</dt>
             <dd>{profile.email}</dd>
           </div>
           <div>
-            <dt>Phone</dt>
+            <dt>{t('phone')}</dt>
             <dd>{profile.phone}</dd>
           </div>
           {profile.idNumber && (
             <div>
-              <dt>ID number</dt>
+              <dt>{t('idNumber')}</dt>
               <dd>{profile.idNumber}</dd>
             </div>
           )}
           {profile.address && (
             <div>
-              <dt>Address</dt>
+              <dt>{t('address')}</dt>
               <dd>{profile.address}</dd>
             </div>
           )}
           {profile.binId && (
             <div>
-              <dt>Bin ID</dt>
+              <dt>{t('binId')}</dt>
               <dd>{profile.binId}</dd>
             </div>
           )}
@@ -174,6 +191,34 @@ function Profile({ onLogout, onProfileChange, profile: savedProfile = initialPro
       </div>
 
       <LogoutButton onLogout={onLogout} />
+
+      {isLanguageOpen && (
+        <div className="modal-backdrop" role="presentation">
+          <section className="language-modal" aria-label={t('selectLanguage')}>
+            <div className="modal-header">
+              <p className="eyebrow">{t('language')}</p>
+              <button className="icon-button" onClick={() => setIsLanguageOpen(false)} type="button">
+                x
+              </button>
+            </div>
+            <div className="language-list">
+              {languages.map((languageOption) => (
+                <button
+                  className={`language-option ${language === languageOption.id ? 'language-option--active' : ''}`}
+                  key={languageOption.id}
+                  onClick={() => {
+                    onLanguageChange?.(languageOption.id)
+                    setIsLanguageOpen(false)
+                  }}
+                  type="button"
+                >
+                  {t(languageOption.labelKey)}
+                </button>
+              ))}
+            </div>
+          </section>
+        </div>
+      )}
 
       {isCameraOpen && (
         <div className="modal-backdrop" role="presentation">

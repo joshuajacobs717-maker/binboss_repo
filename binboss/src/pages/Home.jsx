@@ -47,6 +47,12 @@ const cleaners = [
   },
 ]
 
+const binOptions = [
+  { id: 'small', label: 'Small bin', price: 50 },
+  { id: 'normal', label: 'Normal bin', price: 100 },
+  { id: 'large', label: 'Large bin', price: 400 },
+]
+
 function formatSchedule(schedule) {
   if (!schedule?.date || !schedule?.time) {
     return 'Now'
@@ -66,10 +72,13 @@ function Home({
   activeJobs = [],
   cleanerRequests = [],
   homeownerProfile,
+  isCleanerAvailable = false,
   onCleanerAccepted,
+  onCleanerAvailabilityChange,
   onCleanerRequestAccepted,
   onCleanerRequestRejected,
   role = 'homeowner',
+  t = (key) => key,
 }) {
   const [isSearching, setIsSearching] = useState(false)
   const [foundCleaner, setFoundCleaner] = useState(null)
@@ -78,10 +87,13 @@ function Home({
   const [hasScannerStream, setHasScannerStream] = useState(false)
   const [scannerError, setScannerError] = useState('')
   const [scannedBin, setScannedBin] = useState(null)
-  const [showScheduleModal, setShowScheduleModal] = useState(false)
   const [scheduledClean, setScheduledClean] = useState(null)
   const [scheduleDate, setScheduleDate] = useState('')
   const [scheduleTime, setScheduleTime] = useState('')
+  const [pendingCleanType, setPendingCleanType] = useState(null)
+  const [selectedBinType, setSelectedBinType] = useState('')
+  const [paymentMethod, setPaymentMethod] = useState('card')
+  const [selectedCleanDetails, setSelectedCleanDetails] = useState(null)
   const scannerStreamRef = useRef(null)
   const scannerVideoRef = useRef(null)
   const scannerFrameRef = useRef(null)
@@ -109,7 +121,7 @@ Address: ${binDetails.address}`
       }),
     [activeJobs],
   )
-  const currentCleanerRequest = cleanerRequests[0]
+  const currentCleanerRequest = isCleanerAvailable ? cleanerRequests[0] : null
 
   useEffect(() => {
     if (!isSearching) {
@@ -237,40 +249,73 @@ Address: ${binDetails.address}`
 
   useEffect(() => stopScanner, [stopScanner])
 
+  const resetCleanSelection = () => {
+    setPendingCleanType(null)
+    setSelectedBinType('')
+    setPaymentMethod('card')
+  }
+
   const handleFindCleaner = () => {
     setFoundCleaner(null)
     setScheduledClean(null)
-    setIsSearching(true)
+    setSelectedCleanDetails(null)
+    setPendingCleanType('instant')
   }
 
-  const handleScheduleClean = (event) => {
-    event.preventDefault()
+  const handleScheduleClean = () => {
     setFoundCleaner(null)
-    setScheduledClean({
-      date: scheduleDate,
-      time: scheduleTime,
-    })
-    setShowScheduleModal(false)
+    setScheduledClean(null)
+    setSelectedCleanDetails(null)
+    setPendingCleanType('scheduled')
+  }
+
+  const handleStartSearch = (event) => {
+    event.preventDefault()
+
+    const selectedBin = binOptions.find((binOption) => binOption.id === selectedBinType)
+
+    if (!selectedBin) {
+      return
+    }
+
+    const cleanDetails = {
+      binType: selectedBin.label,
+      binCost: selectedBin.price,
+      paymentMethod,
+    }
+
+    setSelectedCleanDetails(cleanDetails)
+    setScheduledClean(
+      pendingCleanType === 'scheduled'
+        ? {
+            date: scheduleDate,
+            time: scheduleTime,
+          }
+        : null,
+    )
+    resetCleanSelection()
     setIsSearching(true)
   }
 
   const handleAcceptCleaner = () => {
-    onCleanerAccepted(foundCleaner, scheduledClean)
+    onCleanerAccepted(foundCleaner, scheduledClean, selectedCleanDetails)
     setFoundCleaner(null)
     setScheduledClean(null)
+    setSelectedCleanDetails(null)
   }
 
   const handleRejectCleaner = () => {
     setFoundCleaner(null)
     setScheduledClean(null)
+    setSelectedCleanDetails(null)
   }
 
   if (role === 'cleaner') {
     return (
       <section className="page home-page cleaner-home-page">
         <div className="home-top">
-          <p className="eyebrow">Cleaner schedule</p>
-          <h1>Assigned bins</h1>
+          <p className="eyebrow">{t('cleanerSchedule')}</p>
+          <h1>{t('assignedBins')}</h1>
         </div>
 
         <div className="cleaner-schedule-list">
@@ -296,10 +341,14 @@ Address: ${binDetails.address}`
               <div className="empty-status__icon" aria-hidden="true">
                 <span />
               </div>
-              <p>No assigned bins yet</p>
+              <p>{t('noAssignedBins')}</p>
             </div>
           )}
         </div>
+
+        {!isCleanerAvailable && (
+          <p className="availability-hint">{t('noOrdersUntilAvailable')}</p>
+        )}
 
         <button className="qr-fab scanner-fab" onClick={startScanner} type="button">
           <span className="scanner-fab__icon" aria-hidden="true" />
@@ -321,18 +370,18 @@ Address: ${binDetails.address}`
             <div>
               <p className="eyebrow">
                 {currentCleanerRequest.requestType === 'instant'
-                  ? 'Homeowner needs a cleaner'
+                  ? t('homeownerNeedsCleaner')
                   : formatSchedule(currentCleanerRequest.schedule)}
               </p>
               <h2>{currentCleanerRequest.binId}</h2>
             </div>
             <dl className="homeowner-request-card__details">
               <div>
-                <dt>Owner</dt>
+                <dt>{t('owner')}</dt>
                 <dd>{currentCleanerRequest.ownerInitials}</dd>
               </div>
               <div>
-                <dt>Address</dt>
+                <dt>{t('address')}</dt>
                 <dd>{currentCleanerRequest.address}</dd>
               </div>
             </dl>
@@ -342,18 +391,27 @@ Address: ${binDetails.address}`
                 onClick={() => onCleanerRequestRejected(currentCleanerRequest.id)}
                 type="button"
               >
-                Reject
+                {t('reject')}
               </button>
               <button
                 className="primary-action cleaner-actions__accept"
                 onClick={() => onCleanerRequestAccepted(currentCleanerRequest)}
                 type="button"
               >
-                Accept
+                {t('accept')}
               </button>
             </div>
           </aside>
         )}
+
+        <button
+          className={`availability-toggle ${isCleanerAvailable ? 'availability-toggle--active' : ''}`}
+          onClick={() => onCleanerAvailabilityChange?.(!isCleanerAvailable)}
+          type="button"
+        >
+          <span>{isCleanerAvailable ? t('availableForOrders') : t('unavailableForOrders')}</span>
+          <strong>{isCleanerAvailable ? t('setUnavailable') : t('setAvailable')}</strong>
+        </button>
 
         {showScanner && (
           <div className="modal-backdrop" role="presentation">
@@ -413,7 +471,7 @@ Address: ${binDetails.address}`
   return (
     <section className="page home-page">
       <div className="home-top">
-        <p className="eyebrow">BinBoss</p>
+        <p className="eyebrow">Scentora</p>
 
       </div>
 
@@ -431,44 +489,72 @@ Address: ${binDetails.address}`
               <span className="radar-search__dot radar-search__dot--two" />
               <span className="radar-search__dot radar-search__dot--three" />
             </div>
-            <p>Searching for cleaners</p>
+            <p>{t('searchingForCleaners')}</p>
           </div>
         )}
       </div>
 
       <div className="home-actions">
-        <FindCleanerButton isSearching={isSearching} onFindCleaner={handleFindCleaner} />
+        <FindCleanerButton isSearching={isSearching} onFindCleaner={handleFindCleaner} t={t} />
         <button
           className="secondary-action schedule-clean-button"
           disabled={isSearching}
-          onClick={() => setShowScheduleModal(true)}
+          onClick={handleScheduleClean}
           type="button"
         >
-          Schedule clean
+          {t('scheduleClean')}
         </button>
       </div>
       <button className="qr-fab" onClick={() => setShowQrCode(true)} type="button">
         <span className="qr-fab__icon" aria-hidden="true" />
-        <span className="sr-only">Show bin QR code</span>
+        <span className="sr-only">{t('showBinQr')}</span>
       </button>
 
-      {showScheduleModal && (
-        <div className="modal-backdrop" role="presentation">
-          <section className="schedule-modal" aria-label="Schedule bin clean">
-            <div className="modal-header">
-              <p className="eyebrow">Schedule clean</p>
-              <button
-                className="icon-button"
-                onClick={() => setShowScheduleModal(false)}
-                type="button"
-              >
-                x
-              </button>
-            </div>
+      {pendingCleanType && !isSearching && (
+        <form className="clean-options-panel" onSubmit={handleStartSearch}>
+          <div className="modal-header">
+            <p className="eyebrow">{pendingCleanType === 'instant' ? t('findCleaner') : t('scheduleClean')}</p>
+            <button className="icon-button" onClick={resetCleanSelection} type="button">
+              x
+            </button>
+          </div>
 
-            <form className="schedule-form" onSubmit={handleScheduleClean}>
+          <div className="bin-cost-list" role="radiogroup" aria-label="Select bin size">
+            {binOptions.map((binOption) => (
+              <label key={binOption.id}>
+                <input
+                  checked={selectedBinType === binOption.id}
+                  name="binType"
+                  onChange={() => setSelectedBinType(binOption.id)}
+                  required
+                  type="radio"
+                  value={binOption.id}
+                />
+                <span>{binOption.label}</span>
+                <strong>R {binOption.price}</strong>
+              </label>
+            ))}
+          </div>
+
+          <div className="payment-method-toggle" role="radiogroup" aria-label="Select payment method">
+            {['card', 'cash'].map((method) => (
+              <label className={paymentMethod === method ? 'payment-method-toggle__option--active' : ''} key={method}>
+                <input
+                  checked={paymentMethod === method}
+                  name="paymentMethod"
+                  onChange={() => setPaymentMethod(method)}
+                  type="radio"
+                  value={method}
+                />
+                {method}
+              </label>
+            ))}
+          </div>
+
+          {pendingCleanType === 'scheduled' && (
+            <div className="schedule-form">
               <label>
-                Date
+                {t('date')}
                 <input
                   min={today}
                   onChange={(event) => setScheduleDate(event.target.value)}
@@ -478,7 +564,7 @@ Address: ${binDetails.address}`
                 />
               </label>
               <label>
-                Time
+                {t('time')}
                 <input
                   onChange={(event) => setScheduleTime(event.target.value)}
                   required
@@ -486,19 +572,20 @@ Address: ${binDetails.address}`
                   value={scheduleTime}
                 />
               </label>
-              <button className="primary-action" type="submit">
-                Find scheduled cleaner
-              </button>
-            </form>
-          </section>
-        </div>
+            </div>
+          )}
+
+          <button className="primary-action" type="submit">
+            {pendingCleanType === 'instant' ? t('startSearch') : t('findScheduledCleaner')}
+          </button>
+        </form>
       )}
 
       {showQrCode && (
         <div className="modal-backdrop" role="presentation">
           <section className="qr-modal" aria-label="Bin QR code">
             <div className="modal-header">
-              <p className="eyebrow">Bin verification</p>
+              <p className="eyebrow">{t('binVerification')}</p>
               <button className="icon-button" onClick={() => setShowQrCode(false)} type="button">
                 x
               </button>
@@ -526,6 +613,7 @@ Address: ${binDetails.address}`
           cleaner={foundCleaner}
           onAccept={handleAcceptCleaner}
           onReject={handleRejectCleaner}
+          t={t}
         />
       )}
     </section>

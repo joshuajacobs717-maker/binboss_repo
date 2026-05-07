@@ -3,11 +3,14 @@ function CleanerCard({
   mode = 'choice',
   onAccept,
   onReject,
-  title = mode === 'view' ? 'Assigned cleaner' : 'Cleaner found',
+  title = '',
+  t = (key) => key,
 }) {
   if (!cleaner) {
     return null
   }
+
+  const cardTitle = title || (mode === 'view' ? t('assignedCleaner') : 'Cleaner found')
 
   return (
     <aside
@@ -21,31 +24,31 @@ function CleanerCard({
         {cleaner.initials || cleaner.name.charAt(0)}
       </div>
       <div>
-        <p className="eyebrow">{title}</p>
+        <p className="eyebrow">{cardTitle}</p>
         <h2>
           {cleaner.name} {cleaner.surname}
         </h2>
       </div>
       <dl className="cleaner-stats">
         <div>
-          <dt>Rating</dt>
+          <dt>{t('rating')}</dt>
           <dd className="rating-value">
             <span className="star-icon" aria-hidden="true" />
             {cleaner.rating}
           </dd>
         </div>
         <div>
-          <dt>Bins cleaned</dt>
+          <dt>{t('binsCleaned')}</dt>
           <dd>{cleaner.binsCleaned}</dd>
         </div>
       </dl>
       {mode === 'choice' && (
         <div className="cleaner-actions">
           <button className="secondary-action" onClick={onReject} type="button">
-            Reject
+            {t('reject')}
           </button>
           <button className="primary-action cleaner-actions__accept" onClick={onAccept} type="button">
-            Accept
+            {t('accept')}
           </button>
         </div>
       )}
