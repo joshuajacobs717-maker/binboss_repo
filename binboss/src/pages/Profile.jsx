@@ -1,122 +1,122 @@
-import { useEffect, useRef, useState } from 'react'
-import EditDetailsButton from '../components/EditDetailsButton.jsx'
-import LogoutButton from '../components/LogoutButton.jsx'
-import { languages } from '../i18n.js'
+import { useEffect, useRef, useState, useCallback } from 'react';
+import EditDetailsButton from '../components/EditDetailsButton.jsx';
+import LogoutButton from '../components/LogoutButton.jsx';
+import { languages } from '../i18n.js';
 
-const initialProfile = {
-  name: 'Joshua Jacobs',
-  firstName: 'Joshua',
-  lastName: 'Jacobs',
-  email: 'joshua@example.com',
-  phone: '+27 72 555 0198',
-  contact: '+27 72 555 0198',
-  address: '24 Greenway Road, Johannesburg',
-  initials: 'JJ',
-  binId: 'BIN-6F5F',
+const defaultProfile = {
+  name: 'Guest User',
+  firstName: 'Guest',
+  lastName: 'User',
+  email: '',
+  phone: '',
+  contact: '',
+  address: '',
+  initials: 'GU',
+  binId: '',
   photoUrl: '',
-}
+};
 
 function Profile({
   language = 'en',
   onLanguageChange,
   onLogout,
   onProfileChange,
-  profile: savedProfile = initialProfile,
+  profile: savedProfile = defaultProfile,
   t = (key) => key,
 }) {
-  const profile = savedProfile
-  const [cameraError, setCameraError] = useState('')
-  const [isCameraOpen, setIsCameraOpen] = useState(false)
-  const [isLanguageOpen, setIsLanguageOpen] = useState(false)
-  const streamRef = useRef(null)
-  const videoRef = useRef(null)
+  const [cameraError, setCameraError] = useState('');
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
+  const [isLanguageOpen, setIsLanguageOpen] = useState(false);
 
-  const initials =
-    profile.initials ||
-    profile.name
+  const streamRef = useRef(null);
+  const videoRef = useRef(null);
+
+  // Safely merge saved profile with defaults
+  const profile = { ...defaultProfile, ...savedProfile };
+
+  // Safe initials calculation
+  const initials = profile.initials || 
+    (profile.name || '')
       .split(' ')
-      .map((part) => part[0])
+      .map(part => part?.[0] || '')
       .join('')
       .slice(0, 2)
+      .toUpperCase() ||
+    '??';
 
   const saveProfile = (nextProfile) => {
-    onProfileChange?.(nextProfile)
-  }
+    onProfileChange?.(nextProfile);
+  };
 
   const handlePhotoChange = (event) => {
-    const file = event.target.files?.[0]
+    const file = event.target.files?.[0];
+    if (!file) return;
 
-    if (!file) {
-      return
-    }
-
-    const reader = new FileReader()
-
+    const reader = new FileReader();
     reader.onload = () => {
-      saveProfile({
-        ...profile,
-        photoUrl: reader.result,
-      })
-    }
+      saveProfile({ ...profile, photoUrl: reader.result });
+    };
+    reader.readAsDataURL(file);
+  };
 
-    reader.readAsDataURL(file)
-  }
-
-  const stopCamera = () => {
-    streamRef.current?.getTracks().forEach((track) => track.stop())
-    streamRef.current = null
-    setIsCameraOpen(false)
-  }
+  const stopCamera = useCallback(() => {
+    streamRef.current?.getTracks().forEach(track => track.stop());
+    streamRef.current = null;
+    setIsCameraOpen(false);
+  }, []);
 
   const openCamera = async () => {
-    setCameraError('')
-
+    setCameraError('');
     if (!navigator.mediaDevices?.getUserMedia) {
-      setCameraError('Camera is not available on this browser.')
-      return
+      setCameraError('Camera is not available on this browser.');
+      return;
     }
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: false,
-        video: {
-          facingMode: 'user',
-        },
-      })
-
-      streamRef.current = stream
-      setIsCameraOpen(true)
-    } catch {
-      setCameraError('Camera permission was blocked or unavailable.')
+        video: { facingMode: 'user' },
+      });
+      streamRef.current = stream;
+      setIsCameraOpen(true);
+    } catch (err) {
+      console.error(err);
+      setCameraError('Camera permission was blocked or unavailable.');
     }
-  }
+  };
 
   const capturePhoto = () => {
-    const video = videoRef.current
+    const video = videoRef.current;
+    if (!video) return;
 
-    if (!video) {
-      return
-    }
-
-    const canvas = document.createElement('canvas')
-    canvas.width = video.videoWidth
-    canvas.height = video.videoHeight
-    canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height)
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth || 640;
+    canvas.height = video.videoHeight || 480;
+    
+    canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
 
     saveProfile({
       ...profile,
       photoUrl: canvas.toDataURL('image/jpeg', 0.9),
-    })
-    stopCamera()
-  }
+    });
+    stopCamera();
+  };
 
+  // Set video stream when camera opens
   useEffect(() => {
     if (isCameraOpen && videoRef.current && streamRef.current) {
-      videoRef.current.srcObject = streamRef.current
+      videoRef.current.srcObject = streamRef.current;
     }
-  }, [isCameraOpen])
+  }, [isCameraOpen]);
 
-  useEffect(() => stopCamera, [])
+  // Cleanup camera on unmount
+  useEffect(() => {
+    return () => {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, []);
 
   return (
     <section className="page profile-page">
@@ -128,10 +128,16 @@ function Profile({
       >
         💬
       </button>
+
       <div className="profile-header">
         <div className="profile-photo" aria-label={`${profile.name} profile picture`}>
-          {profile.photoUrl ? <img alt="" src={profile.photoUrl} /> : initials}
+          {profile.photoUrl ? (
+            <img alt="" src={profile.photoUrl} />
+          ) : (
+            <span className="initials">{initials}</span>
+          )}
         </div>
+
         <div className="profile-photo-actions">
           <button className="photo-action-button" onClick={openCamera} type="button">
             Take photo
@@ -141,6 +147,7 @@ function Profile({
             <input accept="image/*" onChange={handlePhotoChange} type="file" />
           </label>
         </div>
+
         {cameraError && <p className="camera-error">{cameraError}</p>}
         <h1>{profile.name}</h1>
       </div>
@@ -150,69 +157,49 @@ function Profile({
           <h2>{t('details')}</h2>
           <EditDetailsButton profile={profile} onSave={saveProfile} />
         </div>
+
         <dl>
-          <div>
-            <dt>{t('name')}</dt>
-            <dd>{profile.firstName || profile.name}</dd>
-          </div>
+          <div><dt>{t('name')}</dt><dd>{profile.firstName || profile.name}</dd></div>
           {profile.lastName && (
-            <div>
-              <dt>{t('lastName')}</dt>
-              <dd>{profile.lastName}</dd>
-            </div>
+            <div><dt>{t('lastName')}</dt><dd>{profile.lastName}</dd></div>
           )}
-          <div>
-            <dt>{t('email')}</dt>
-            <dd>{profile.email}</dd>
-          </div>
-          <div>
-            <dt>{t('phone')}</dt>
-            <dd>{profile.phone}</dd>
-          </div>
+          <div><dt>{t('email')}</dt><dd>{profile.email}</dd></div>
+          <div><dt>{t('phone')}</dt><dd>{profile.phone || profile.contact}</dd></div>
+          
           {profile.idNumber && (
-            <div>
-              <dt>{t('idNumber')}</dt>
-              <dd>{profile.idNumber}</dd>
-            </div>
+            <div><dt>{t('idNumber')}</dt><dd>{profile.idNumber}</dd></div>
           )}
           {profile.address && (
-            <div>
-              <dt>{t('address')}</dt>
-              <dd>{profile.address}</dd>
-            </div>
+            <div><dt>{t('address')}</dt><dd>{profile.address}</dd></div>
           )}
           {profile.binId && (
-            <div>
-              <dt>{t('binId')}</dt>
-              <dd>{profile.binId}</dd>
-            </div>
+            <div><dt>{t('binId')}</dt><dd>{profile.binId}</dd></div>
           )}
         </dl>
       </div>
 
       <LogoutButton onLogout={onLogout} />
 
+      {/* Language Modal */}
       {isLanguageOpen && (
         <div className="modal-backdrop" role="presentation">
           <section className="language-modal" aria-label={t('selectLanguage')}>
             <div className="modal-header">
               <p className="eyebrow">{t('language')}</p>
-              <button className="icon-button" onClick={() => setIsLanguageOpen(false)} type="button">
-                x
-              </button>
+              <button className="icon-button" onClick={() => setIsLanguageOpen(false)} type="button">x</button>
             </div>
             <div className="language-list">
-              {languages.map((languageOption) => (
+              {languages.map((lang) => (
                 <button
-                  className={`language-option ${language === languageOption.id ? 'language-option--active' : ''}`}
-                  key={languageOption.id}
+                  key={lang.id}
+                  className={`language-option ${language === lang.id ? 'language-option--active' : ''}`}
                   onClick={() => {
-                    onLanguageChange?.(languageOption.id)
-                    setIsLanguageOpen(false)
+                    onLanguageChange?.(lang.id);
+                    setIsLanguageOpen(false);
                   }}
                   type="button"
                 >
-                  {t(languageOption.labelKey)}
+                  {t(lang.labelKey)}
                 </button>
               ))}
             </div>
@@ -220,16 +207,21 @@ function Profile({
         </div>
       )}
 
+      {/* Camera Modal */}
       {isCameraOpen && (
         <div className="modal-backdrop" role="presentation">
           <section className="camera-modal" aria-label="Take profile photo">
             <div className="modal-header">
               <p className="eyebrow">Take photo</p>
-              <button className="icon-button" onClick={stopCamera} type="button">
-                x
-              </button>
+              <button className="icon-button" onClick={stopCamera} type="button">x</button>
             </div>
-            <video autoPlay className="camera-preview" muted playsInline ref={videoRef} />
+            <video
+              autoPlay
+              muted
+              playsInline
+              ref={videoRef}
+              className="camera-preview"
+            />
             <button className="primary-action" onClick={capturePhoto} type="button">
               Use photo
             </button>
@@ -237,7 +229,7 @@ function Profile({
         </div>
       )}
     </section>
-  )
+  );
 }
 
-export default Profile
+export default Profile;
