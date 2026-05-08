@@ -36,7 +36,6 @@ function Login({ onLogin, t = (key) => key }) {
     const file = e.target.files[0]
     if (!file) return
     setPhotoFile(file)
-    // show preview
     const reader = new FileReader()
     reader.onloadend = () => setPhotoPreview(reader.result)
     reader.readAsDataURL(file)
@@ -47,7 +46,6 @@ function Login({ onLogin, t = (key) => key }) {
     setSubmitting(true)
     setError('')
     try {
-      // map 'homeowner' role to 'house' for backend
       const backendRole = selectedRole === 'homeowner' ? 'house' : 'cleaner'
       const user = await signIn(backendRole, { email, password })
       onLogin(user.role, user)
@@ -78,7 +76,6 @@ function Login({ onLogin, t = (key) => key }) {
     }
 
     try {
-// replace the cleaner block inside handleSignUpSubmit with this:
       if (signupRole === 'cleaner') {
         const id_number = formData.get('idNumber')
         if (!/^\d{13}$/.test(id_number)) {
@@ -91,36 +88,30 @@ function Login({ onLogin, t = (key) => key }) {
           setSubmitting(false)
           return
         }
-
-        // upload to Cloudinary first — get back a URL
         const photoUrl = await uploadPhoto(photoFile)
-        console.log("Cloudinary URL:", photoUrl)
-        console.log("Type:", typeof photoUrl)
-        // then register cleaner with the URL — no large payload
         const user = await signUp('cleaner', {
           first_name, last_name, email: emailVal, contact,
           id_number, password,
-          photo: photoUrl // just a URL string — tiny payload
-        })
-        console.log({
-          first_name,
-          last_name,
-          email: emailVal,
-          contact,
-          id_number,
-          password,
           photo: photoUrl
         })
         onLogin(user.role, user)
+
       } else {
         const house_number = formData.get('houseNumber').trim()
         const street_name = formData.get('streetName').trim()
         const place = formData.get('place').trim()
         const postal_code = formData.get('postalCode').trim()
+
+        // upload photo if provided, otherwise null
+        let photoUrl = null
+        if (photoFile) {
+          photoUrl = await uploadPhoto(photoFile)
+        }
+
         const user = await signUp('house', {
           first_name, last_name, email: emailVal, contact, password,
           house_number, street_name, place, postal_code,
-          photo: null // optional for house
+          photo: photoUrl
         })
         onLogin(user.role, user)
       }
@@ -216,15 +207,24 @@ function Login({ onLogin, t = (key) => key }) {
           <label>Confirm password<input autoComplete="new-password" name="confirmPassword" required type="password" /></label>
         </div>
         {signupRole === 'homeowner' && (
-          <fieldset className="signup-address">
-            <legend>Address</legend>
-            <div className="signup-field-grid">
-              <label>House number<input autoComplete="address-line1" name="houseNumber" required type="text" /></label>
-              <label>Street name<input autoComplete="address-line1" name="streetName" required type="text" /></label>
-              <label>Place<input autoComplete="address-level2" name="place" required type="text" /></label>
-              <label>Postal code<input autoComplete="postal-code" inputMode="numeric" name="postalCode" required type="text" /></label>
-            </div>
-          </fieldset>
+          <>
+            <fieldset className="signup-address">
+              <legend>Address</legend>
+              <div className="signup-field-grid">
+                <label>House number<input autoComplete="address-line1" name="houseNumber" required type="text" /></label>
+                <label>Street name<input autoComplete="address-line1" name="streetName" required type="text" /></label>
+                <label>Place<input autoComplete="address-level2" name="place" required type="text" /></label>
+                <label>Postal code<input autoComplete="postal-code" inputMode="numeric" name="postalCode" required type="text" /></label>
+              </div>
+            </fieldset>
+            <label>
+              Profile Photo (optional)
+              <input accept="image/*" onChange={handlePhotoChange} type="file" />
+            </label>
+            {photoPreview && (
+              <img src={photoPreview} alt="Preview" style={{ width: 80, height: 80, borderRadius: '50%', objectFit: 'cover', marginTop: 8 }} />
+            )}
+          </>
         )}
         {error && <p className="login-error">{error}</p>}
         <button className="primary-action" type="submit" disabled={submitting}>
