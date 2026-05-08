@@ -225,6 +225,7 @@ function App() {
       activeJobs,
       cleanerRequests,
       homeownerProfile,
+      cleanerProfile: activeProfile,
       isCleanerAvailable,
       onCleanerAvailabilityChange: setIsCleanerAvailable,
       onCleanerRequestAccepted: handleCleanerRequestAccepted,

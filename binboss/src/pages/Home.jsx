@@ -65,13 +65,19 @@ function formatSchedule(schedule) {
 }
 
 function getBinIdFromScan(value) {
-  return value.match(/Bin ID:\s*([A-Z0-9-]+)/i)?.[1] || value.match(/BIN-[A-Z0-9-]+/i)?.[0] || ''
+  return (
+    value.match(/Bin Code:\s*([A-Z0-9-]+)/i)?.[1] ||
+    value.match(/Bin ID:\s*([A-Z0-9-]+)/i)?.[1] ||
+    value.match(/BIN-[A-Z0-9-]+/i)?.[0] ||
+    ''
+  )
 }
 
 function Home({
   activeJobs = [],
   cleanerRequests = [],
   homeownerProfile,
+  cleanerProfile,
   isCleanerAvailable = false,
   onCleanerAccepted,
   onCleanerAvailabilityChange,
@@ -86,6 +92,7 @@ function Home({
   const [showScanner, setShowScanner] = useState(false)
   const [hasScannerStream, setHasScannerStream] = useState(false)
   const [scannerError, setScannerError] = useState('')
+  const [scanStatus, setScanStatus] = useState(null)
   const [scannedBin, setScannedBin] = useState(null)
   const [scheduledClean, setScheduledClean] = useState(null)
   const [scheduleDate, setScheduleDate] = useState('')
@@ -98,19 +105,25 @@ function Home({
   const scannerVideoRef = useRef(null)
   const scannerFrameRef = useRef(null)
   const scannerDetectorRef = useRef(null)
+  const scanStatusTimeoutRef = useRef(null)
   const binDetails = {
     binId: homeownerProfile?.binId || 'BIN-6F5F',
     userInitials: homeownerProfile?.initials || 'BB',
     address: homeownerProfile?.address || 'Address pending',
   }
 
-  const qrValue = `Bin ID: ${binDetails.binId}
-User initials: ${binDetails.userInitials}
+  const qrValue = `Bin Code: ${binDetails.binId}
+Owner initials: ${binDetails.userInitials}
 Address: ${binDetails.address}`
   const today = new Date().toISOString().slice(0, 10)
   const cleanerJobs = useMemo(
-    () =>
-      activeJobs.filter((job) => !(job.status === 'Returned' && job.awaitingHomeownerVerification)).sort((firstJob, secondJob) => {
+    () => {
+      const relevantJobs =
+        role === 'cleaner' && cleanerProfile
+          ? activeJobs.filter((job) => job.cleaner?.email === cleanerProfile.email)
+          : activeJobs
+
+      return relevantJobs.filter((job) => !(job.status === 'Returned' && job.awaitingHomeownerVerification)).sort((firstJob, secondJob) => {
         if (firstJob.requestType !== secondJob.requestType) {
           return firstJob.requestType === 'instant' ? -1 : 1
         }
@@ -118,8 +131,9 @@ Address: ${binDetails.address}`
         return `${firstJob.schedule?.date || ''}${firstJob.schedule?.time || ''}`.localeCompare(
           `${secondJob.schedule?.date || ''}${secondJob.schedule?.time || ''}`,
         )
-      }),
-    [activeJobs],
+      })
+    },
+    [activeJobs, cleanerProfile, role],
   )
   const currentCleanerRequest = isCleanerAvailable ? cleanerRequests[0] : null
 
@@ -145,25 +159,49 @@ Address: ${binDetails.address}`
     scannerStreamRef.current?.getTracks().forEach((track) => track.stop())
     scannerStreamRef.current = null
     scannerDetectorRef.current = null
+    clearTimeout(scanStatusTimeoutRef.current)
+    scanStatusTimeoutRef.current = null
     setHasScannerStream(false)
     setShowScanner(false)
+    setScanStatus(null)
   }, [])
 
-  const handleScannedValue = useCallback((value) => {
-    const binId = getBinIdFromScan(value)
-    const matchedJob = activeJobs.find((job) => job.binId.toLowerCase() === binId.toLowerCase())
+  const handleScannedValue = useCallback(
+    (value) => {
+      const binId = getBinIdFromScan(value)
+      if (!binId) {
+        setScanStatus({ type: 'error', message: 'No bin code found in the QR code.' })
+        clearTimeout(scanStatusTimeoutRef.current)
+        scanStatusTimeoutRef.current = window.setTimeout(() => setScanStatus(null), 2000)
+        return
+      }
 
-    if (matchedJob) {
-      setScannedBin(matchedJob)
-      stopScanner()
-      return
-    }
+      const jobsToCheck =
+        role === 'cleaner' && cleanerProfile
+          ? activeJobs.filter((job) => job.cleaner?.email === cleanerProfile.email)
+          : activeJobs
 
-    setScannerError('Scanned code did not match an assigned bin.')
-  }, [activeJobs, stopScanner])
+      const matchedJob = jobsToCheck.find((job) => job.binId.toLowerCase() === binId.toLowerCase())
+
+      if (matchedJob) {
+        setScannedBin(matchedJob)
+        setScanStatus({ type: 'success', message: 'Bin code verified.' })
+        clearTimeout(scanStatusTimeoutRef.current)
+        scanStatusTimeoutRef.current = window.setTimeout(() => setScanStatus(null), 2000)
+        stopScanner()
+        return
+      }
+
+      setScanStatus({ type: 'error', message: 'Scanned code does not match your assigned bin.' })
+      clearTimeout(scanStatusTimeoutRef.current)
+      scanStatusTimeoutRef.current = window.setTimeout(() => setScanStatus(null), 2000)
+    },
+    [activeJobs, cleanerProfile, role, stopScanner],
+  )
 
   const startScanner = async () => {
     setScannerError('')
+    setScanStatus(null)
     setScannedBin(null)
 
     if (!navigator.mediaDevices?.getUserMedia) {
@@ -426,6 +464,11 @@ Address: ${binDetails.address}`
                 <video autoPlay className="scanner-preview" muted playsInline ref={scannerVideoRef} />
               )}
               {scannerError && <p className="camera-error">{scannerError}</p>}
+              {scanStatus && (
+                <div className={`scan-result scan-result--${scanStatus.type}`} role="status" aria-live="polite">
+                  <span aria-hidden="true">{scanStatus.type === 'success' ? '✔' : '✕'}</span> {scanStatus.message}
+                </div>
+              )}
               <button
                 className="primary-action"
                 disabled={!cleanerJobs.length}
